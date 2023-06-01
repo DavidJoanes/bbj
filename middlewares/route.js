@@ -4,7 +4,7 @@ const router = express.Router()
 
 
 router.get("/", (req, res) => {
-    res.send("Welcome to Bole by Joe!")
+    res.send("Welcome to Bole by Joanes!")
 })
 
 // USER APIs
