@@ -386,7 +386,7 @@ module.exports = functions = {
         }
     },
     validate: function(req, res) {
-    },
+    }, 
     restoreSignin: async(req, res) => {
         const data = req.body
         try {
@@ -1107,7 +1107,7 @@ module.exports = functions = {
                   });
                   transporter.verify().then(console.log).catch(console.error);
                 await transporter.sendMail({
-                    from: '"Bole by Joe" <bolebyjoe@gmail.com>', // sender address
+                    from: '"Bole by Joanes" <bolebyjoanes@gmail.com>', // sender address
                     to: data.email, // list of receivers separated by a comma
                     subject: "Authorization Code", // Subject line
                     text: `Your authorization code for password reset is: ${data.code}`, // plain text body
