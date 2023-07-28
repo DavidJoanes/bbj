@@ -1020,7 +1020,7 @@ module.exports = functions = {
             console.log(dispatcher["ratings"])
             return res.status(200).json({
                 success: true,
-                message: "Thank you..",
+                message: "Thank you...",
                 data: dispatcher
             })
         } catch(error) {

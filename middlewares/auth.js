@@ -19,7 +19,7 @@ const verifyToken = (req, res, next) => {
     } catch (err) {
       return res.status(403).send({
         success: false,
-        message: "Invalid token!",
+        message: "Token has expired!",
         data: [],
       })
     }
