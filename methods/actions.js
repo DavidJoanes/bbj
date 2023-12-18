@@ -19,55 +19,104 @@ const cloudinary = require("../configs/cloudinary_config")
 module.exports = functions = {
     profileImage: async(req, res) => {
         let imageDir = null
+        const data = req.body
+        if (data.category == "coverimage") {
+            imageDir = "cover_images"
+        }else if (data.category == "packageimage") {
+            imageDir = "package_images"
+        }else {
+            imageDir = "profile_images"
+        }
         try {
-            imageUploader(req, res, (error) => {
-                const data = req.body
-                if (data.category == "coverimage") {
-                    imageDir = "cover_images"
-                }else if (data.category == "packageimage") {
-                    imageDir = "package_images"
-                }else {
-                    imageDir = "profile_images"
-                }
-                if (error) {
-                    console.log("Error occured while uploading profile image!: "+error)
-                    return res.status(403).json({
-                        success: false,
-                        message: "Error occured while uploading profile image!"
-                    })
-                }else {
-                    (async() => {
-                        var userExist = await userModel.findOne({email: data.email})
-                        try{
-                            await cloudinary.uploader.destroy(userExist["profileimage"]["id"])
-                        } catch(e) {
-                            console.log(`There was no profile image initially: ${e}`)
-                        }
-                        const result = await cloudinary.uploader.upload(req.file.path, {folder: imageDir})
-                        await userModel.findOneAndUpdate(
-                            {email: data.email},
-                            {profileimage: {
-                                url: result.secure_url,
-                                id: result.public_id,
-                            }},
-                            {new: true, runValidators: true}
-                        )
-                        var newLog = dataLogModel({
-                            email: data.email,
-                            logtype: `Replaced profile image`,
-                            date: new Date().toISOString().split('T')[0],
-                            time: new Date(Date.now() + 1 * (60 * 60 * 1000)).toISOString().split('T')[1],
-                        })
-                        newLog.save()
-                        var user = await userModel.findOne({email: data.email})
-                        return res.status(200).json({
-                            success: true,
-                            message: "Profile image replaced successfully..",
-                            data: user
-                        })
-                    }) ()
-                }
-            })
+            // imageUploader(req, res, (error) => {
+            //     const data = req.body
+            //     if (data.category == "coverimage") {
+            //         imageDir = "cover_images"
+            //     }else if (data.category == "packageimage") {
+            //         imageDir = "package_images"
+            //     }else {
+            //         imageDir = "profile_images"
+            //     }
+            //     if (error) {
+            //         console.log("Error occured while uploading profile image!: "+error)
+            //         return res.status(403).json({
+            //             success: false,
+            //             message: "Error occured while uploading profile image!"
+            //         })
+            //     }else {
+            //         (async() => {
+            //             var userExist = await userModel.findOne({email: data.email})
+            //             try{
+            //                 await cloudinary.uploader.destroy(userExist["profileimage"]["id"])
+            //             } catch(e) {
+            //                 console.log(`There was no profile image initially: ${e}`)
+            //             }
+            //             const result = await cloudinary.uploader.upload(req.file.path, {folder: imageDir})
+            //             await userModel.findOneAndUpdate(
+            //                 {email: data.email},
+            //                 {profileimage: {
+            //                     url: result.secure_url,
+            //                     id: result.public_id,
+            //                 }},
+            //                 {new: true, runValidators: true}
+            //             )
+            //             var newLog = dataLogModel({
+            //                 email: data.email,
+            //                 logtype: `Replaced profile image`,
+            //                 date: new Date().toISOString().split('T')[0],
+            //                 time: new Date(Date.now() + 1 * (60 * 60 * 1000)).toISOString().split('T')[1],
+            //             })
+            //             newLog.save()
+            //             var user = await userModel.findOne({email: data.email})
+            //             return res.status(200).json({
+            //                 success: true,
+            //                 message: "Profile image replaced successfully..",
+            //                 data: user
+            //             })
+            //         }) ()
+            //     }
+            // })
+
+            var userExist = await userModel.findOne({email: data.email})
+            try{
+                await cloudinary.uploader.destroy(userExist["profileimage"]["id"])
+            } catch(e) {
+                console.log(`There was no profile image initially: ${e}`)
+            }
+
+            const fileBuffer = Buffer.from(data.content);
+            // Upload the file buffer to Cloudinary
+            await cloudinary.uploader.upload_stream({folder: imageDir},  async(error, result) => {
+            if (error) {
+                console.log("Error occured while uploading profile image!: "+error)
+                return res.status(403).json({
+                    success: false,
+                    message: "Error occured while uploading profile image!"
+                })
+            } else {
+                await userModel.findOneAndUpdate(
+                    {email: data.email},
+                    {profileimage: {
+                        url: result.secure_url,
+                        id: result.public_id,
+                    }},
+                    {new: true, runValidators: true}
+                )
+                var newLog = dataLogModel({
+                    email: data.email,
+                    logtype: `Replaced profile image`,
+                    date: new Date().toISOString().split('T')[0],
+                    time: new Date(Date.now() + 1 * (60 * 60 * 1000)).toISOString().split('T')[1],
+                })
+                newLog.save()
+                var user = await userModel.findOne({email: data.email})
+                return res.status(200).json({
+                    success: true,
+                    message: "Profile image replaced successfully..",
+                    data: user
+                })
+            }
+            }).end(fileBuffer);
         } catch(error) {
             console.log("Error occured while uploading image!: "+error)
             return res.status(500).json({
@@ -79,55 +128,103 @@ module.exports = functions = {
     },
     coverImage: async(req, res) => {
         let imageDir = null
+        const data = req.body
+        if (data.category == "coverimage") {
+            imageDir = "cover_images"
+        }else if (data.category == "packageimage") {
+            imageDir = "package_images"
+        }else {
+            imageDir = "profile_images"
+        }
         try {
-            imageUploader(req, res, (error) => {
-                const data = req.body
-                if (data.category == "coverimage") {
-                    imageDir = "cover_images"
-                }else if (data.category == "packageimage") {
-                    imageDir = "package_images"
-                }else {
-                    imageDir = "profile_images"
-                }
-                if (error) {
-                    console.log("Error occured while uploading cover image!: "+error)
-                    return res.status(403).json({
-                        success: false,
-                        message: "Error occured while uploading cover image!"
-                    })
-                }else {
-                    (async() => {
-                        var packageExist = await packageModel.findOne({packagename: data.packagename})
-                        try{
-                            await cloudinary.uploader.destroy(packageExist["coverimage"]["id"])
-                        } catch(e) {
-                            console.log(`There was no cover image initially: ${e}`)
-                        }
-                        const result = await cloudinary.uploader.upload(req.file.path, {folder: imageDir})
-                        await packageModel.findOneAndUpdate(
-                            {packagename: data.packagename},
-                            {coverimage: {
-                                url: result.secure_url,
-                                id: result.public_id,
-                            }},
-                            {new: true, runValidators: true}
-                        )
-                        var newLog = dataLogModel({
-                            email: data.email,
-                            logtype: `Admin replaced ${data.packagename} package cover image`,
-                            date: new Date().toISOString().split('T')[0],
-                            time: new Date(Date.now() + 1 * (60 * 60 * 1000)).toISOString().split('T')[1],
-                        })
-                        newLog.save()
-                        var package = await packageModel.findOne({packagename: data.packagename})
-                        return res.status(200).json({
-                            success: true,
-                            message: "Cover photo replaced successfully..",
-                            data: package
-                        })
-                    }) ()
-                }
-            })
+            // imageUploader(req, res, (error) => {
+            //     const data = req.body
+            //     if (data.category == "coverimage") {
+            //         imageDir = "cover_images"
+            //     }else if (data.category == "packageimage") {
+            //         imageDir = "package_images"
+            //     }else {
+            //         imageDir = "profile_images"
+            //     }
+            //     if (error) {
+            //         console.log("Error occured while uploading cover image!: "+error)
+            //         return res.status(403).json({
+            //             success: false,
+            //             message: "Error occured while uploading cover image!"
+            //         })
+            //     }else {
+            //         (async() => {
+            //             var packageExist = await packageModel.findOne({packagename: data.packagename})
+            //             try{
+            //                 await cloudinary.uploader.destroy(packageExist["coverimage"]["id"])
+            //             } catch(e) {
+            //                 console.log(`There was no cover image initially: ${e}`)
+            //             }
+            //             const result = await cloudinary.uploader.upload(req.file.path, {folder: imageDir})
+            //             await packageModel.findOneAndUpdate(
+            //                 {packagename: data.packagename},
+            //                 {coverimage: {
+            //                     url: result.secure_url,
+            //                     id: result.public_id,
+            //                 }},
+            //                 {new: true, runValidators: true}
+            //             )
+            //             var newLog = dataLogModel({
+            //                 email: data.email,
+            //                 logtype: `Admin replaced ${data.packagename} package cover image`,
+            //                 date: new Date().toISOString().split('T')[0],
+            //                 time: new Date(Date.now() + 1 * (60 * 60 * 1000)).toISOString().split('T')[1],
+            //             })
+            //             newLog.save()
+            //             var package = await packageModel.findOne({packagename: data.packagename})
+            //             return res.status(200).json({
+            //                 success: true,
+            //                 message: "Cover photo replaced successfully..",
+            //                 data: package
+            //             })
+            //         }) ()
+            //     }
+            // })
+
+            var packageExist = await packageModel.findOne({packagename: data.packagename})
+            try{
+                await cloudinary.uploader.destroy(packageExist["coverimage"]["id"])
+            } catch(e) {
+                console.log(`There was no cover image initially: ${e}`)
+            }
+            const fileBuffer = Buffer.from(data.content);
+            // Upload the file buffer to Cloudinary
+            await cloudinary.uploader.upload_stream({folder: imageDir},  async(error, result) => {
+            if (error) {
+                console.error("Error occured while uploading cover image!: "+error);
+                return res.status(403).json({
+                    success: false,
+                    message: "Error occured while uploading cover image!"
+                })
+            } else {
+                await packageModel.findOneAndUpdate(
+                    {packagename: data.packagename},
+                    {coverimage: {
+                        url: result.secure_url,
+                        id: result.public_id,
+                    }},
+                    {new: true, runValidators: true}
+                )
+                var newLog = dataLogModel({
+                    email: data.email,
+                    logtype: `Admin replaced ${data.packagename} package cover image`,
+                    date: new Date().toISOString().split('T')[0],
+                    time: new Date(Date.now() + 1 * (60 * 60 * 1000)).toISOString().split('T')[1],
+                })
+                newLog.save()
+                var package = await packageModel.findOne({packagename: data.packagename})
+                return res.status(200).json({
+                    success: true,
+                    message: "Cover photo replaced successfully..",
+                    data: package
+                })
+            }
+            }).end(fileBuffer);
         } catch(error) {
             console.log("Error occured while uploading image!: "+error)
             return res.status(500).json({
@@ -139,49 +236,91 @@ module.exports = functions = {
     },
     image: async(req, res) => {
         let imageDir = null
+        const data = req.body
+        if (data.category == "coverimage") {
+            imageDir = "cover_images"
+        }else if (data.category == "packageimage") {
+            imageDir = "package_images"
+        }else {
+            imageDir = "profile_images"
+        }
         try {
-            imageUploader(req, res, (error) => {
-                const data = req.body
-                if (data.category == "coverimage") {
-                    imageDir = "cover_images"
-                }else if (data.category == "packageimage") {
-                    imageDir = "package_images"
-                }else {
-                    imageDir = "profile_images"
-                }
-                if (error) {
-                    console.log("Error occured while uploading image!: "+error)
-                    return res.status(403).json({
-                        success: false,
-                        message: "Error occured while uploading image!"
-                    })
-                }else {
-                    (async() => {
-                        var packageExist = await packageModel.findOne({packagename: data.packagename})
-                        const result = await cloudinary.uploader.upload(req.file.path, {folder: imageDir})
-                        packageExist["images"] = [...packageExist["images"], result.secure_url]
-                        await packageModel.findOneAndUpdate(
-                            {packagename: data.packagename},
-                            {...packageExist},
-                            {new: true, runValidators: true}
-                        )
-                        var newLog = dataLogModel({
-                            email: data.email,
-                            logtype: `Admin added an image to ${data.packagename} package`,
-                            date: new Date().toISOString().split('T')[0],
-                            time: new Date(Date.now() + 1 * (60 * 60 * 1000)).toISOString().split('T')[1],
-                        })
-                        newLog.save()
-                        var package = await packageModel.findOne({packagename: data.packagename})
-                        console.log(package["images"])
-                        return res.status(200).json({
-                            success: true,
-                            message: "image added successfully..",
-                            data: package
-                        })
-                    }) ()
-                }
-            })
+            // imageUploader(req, res, (error) => {
+            //     const data = req.body
+            //     if (data.category == "coverimage") {
+            //         imageDir = "cover_images"
+            //     }else if (data.category == "packageimage") {
+            //         imageDir = "package_images"
+            //     }else {
+            //         imageDir = "profile_images"
+            //     }
+            //     if (error) {
+            //         console.log("Error occured while uploading image!: "+error)
+            //         return res.status(403).json({
+            //             success: false,
+            //             message: "Error occured while uploading image!"
+            //         })
+            //     }else {
+            //         (async() => {
+            //             var packageExist = await packageModel.findOne({packagename: data.packagename})
+            //             const result = await cloudinary.uploader.upload(req.file.path, {folder: imageDir})
+            //             packageExist["images"] = [...packageExist["images"], result.secure_url]
+            //             await packageModel.findOneAndUpdate(
+            //                 {packagename: data.packagename},
+            //                 {...packageExist},
+            //                 {new: true, runValidators: true}
+            //             )
+            //             var newLog = dataLogModel({
+            //                 email: data.email,
+            //                 logtype: `Admin added an image to ${data.packagename} package`,
+            //                 date: new Date().toISOString().split('T')[0],
+            //                 time: new Date(Date.now() + 1 * (60 * 60 * 1000)).toISOString().split('T')[1],
+            //             })
+            //             newLog.save()
+            //             var package = await packageModel.findOne({packagename: data.packagename})
+            //             console.log(package["images"])
+            //             return res.status(200).json({
+            //                 success: true,
+            //                 message: "image added successfully..",
+            //                 data: package
+            //             })
+            //         }) ()
+            //     }
+            // })
+
+            const fileBuffer = Buffer.from(data.content);
+            // Upload the file buffer to Cloudinary
+            await cloudinary.uploader.upload_stream({folder: imageDir},  async(error, result) => {
+            if (error) {
+                console.log("Error occured while uploading image!: "+error)
+                return res.status(403).json({
+                    success: false,
+                    message: "Error occured while uploading image!"
+                })
+            } else {
+                var packageExist = await packageModel.findOne({packagename: data.packagename})
+                packageExist["images"] = [...packageExist["images"], result.secure_url]
+                await packageModel.findOneAndUpdate(
+                    {packagename: data.packagename},
+                    {...packageExist},
+                    {new: true, runValidators: true}
+                )
+                var newLog = dataLogModel({
+                    email: data.email,
+                    logtype: `Admin added an image to ${data.packagename} package`,
+                    date: new Date().toISOString().split('T')[0],
+                    time: new Date(Date.now() + 1 * (60 * 60 * 1000)).toISOString().split('T')[1],
+                })
+                newLog.save()
+                var package = await packageModel.findOne({packagename: data.packagename})
+                console.log(package["images"])
+                return res.status(200).json({
+                    success: true,
+                    message: "image added successfully..",
+                    data: package
+                })
+            }
+            }).end(fileBuffer);
         } catch(error) {
             console.log("Error occured while uploading image!: "+error)
             return res.status(500).json({

@@ -24,7 +24,7 @@ var adminSchema = new Schema({
     },
 })
 
-adminSchema.pre("save", function(next) {
+adminSchema.pre("save", async function(next) {
     var user = this;
     if (this.isModified("password") || this.isNew) {
         bcrypt.genSalt(10, function(error, salt) {
